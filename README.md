@@ -7,7 +7,6 @@ import numpy as np
 import torch
 import pdbbasic as pdbb
 
-
 # read PDB file
 coord1, info1 = pdbb.readpdb('filename1.pdb')
 coord2, info2 = pdbb.readpdb('filename2.pdb')

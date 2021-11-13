@@ -1,40 +1,37 @@
 #! /usr/bin/env python
 
-import sys
-sys.path.append("../")
-from pdbutil import ProteinBackbone as pbb
-import pdbbasic as bg
-import torch
 import numpy as np
+import torch
+import pdbbasic as pdbb
 
-str1_numpy = pbb(file='7bqd.pdb').coord[:,1]
-str1_torch = torch.Tensor(str1_numpy)
-str2_numpy = pbb(file='7bpn.pdb').coord[:,1]
-str2_torch = torch.Tensor(str2_numpy)
+# read PDB file
+coord1, info1 = pdbb.readpdb('data/7bqd_notag.pdb')
+coord2, info2 = pdbb.readpdb('data/7bqd_notag.pdb')
+ca1 = coord1[:79,1]
+ca2 = coord2[:79,1]
 
-hoge, info = bg.readpdb('7bpn.pdb')
-print(bg.writepdb(hoge))
+# calc RMSD
+rmsd_np = pdbb.rmsd(ca1, ca2)
 
-#print(hoge-str2_numpy)
-exit()
+# Kabsch superposition
+coo_sup1, coo_sup2 = pdbb.kabsch(ca1, ca2)
 
+# torsion angle
+torsion = pdbb.torsion_angles(coord1)
 
-batch1 = str1_torch.unfold(0, 8, 1)[0:50].transpose(-2,-1)
-batch2 = str2_torch.unfold(0, 8, 1)[0:50].transpose(-2,-1)
+# distance matrix
+distmat_within = pdbb.distance_matrix(ca1)
+distmat_between = pdbb.distance_matrix(ca1, ca2)
 
-hoge = bg.kabsch(batch1, np.array(batch2), rot_only=True)
+# torch Tensor is also applicable
+rmsd_torch = pdbb.rmsd(torch.Tensor(ca1), torch.Tensor(ca2))
 
-hoge = bg.distance_matrix(np.array(batch1))
+# batched calculation is applicable
+ca_batch1 = np.repeat(np.expand_dims(ca1, axis=0), 100, axis=0)
+ca_batch2 = np.repeat(np.expand_dims(ca2, axis=0), 100, axis=0)
+bb_batch = np.repeat(np.expand_dims(coord1, axis=0), 100, axis=0)
 
-
-full_numpy = pbb(file='7bqd.pdb').coord[:,0:4]
-full_torch = torch.Tensor(full_numpy)
-
-print(full_torch.shape)
-
-batch1 = full_torch.unfold(0, 10, 1)[0:50].transpose(-2,-1).transpose(-3,-2)
-
-torsion_torch = bg.torsion_angles(batch1)
-torsion_numpy = bg.torsion_angles(np.array(batch1))
-print(torsion_torch[0]/3.141592*180)
-print(torsion_numpy[0]/3.141592*180)
+rmsd_batch = pdbb.rmsd(ca_batch1, ca_batch2)
+sup_batch1, sup_batch2 = pdbb.kabsch(ca_batch1, ca_batch2)
+torsion_batch = pdbb.torsion_angles(bb_batch)
+distmat_batch = pdbb.distance_matrix(ca_batch1)

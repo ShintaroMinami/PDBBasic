@@ -35,7 +35,7 @@ def writepdb(backbone, info=None, sidechain=None, use_original_resnum=False, ign
     if info:
         winfo = [_get_writeinfo(length,info=i,original=use_original_resnum) for i in info]
     else:
-        winfo = [_get_writeinfo(length,original=use_original_resnum) for _ in range(shape)]
+        winfo = [_get_writeinfo(length,original=use_original_resnum) for _ in range(backbone.shape[0])]
     line = ""
     for imodel, (bb, wi) in enumerate(list(zip(backbone, winfo))):
         if ignore_MODEL == False:

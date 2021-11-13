@@ -1,0 +1,8 @@
+# temporary files & directories
+build/
+pdbbasic.egg-info/
+dist/
+
+# python caches
+**/__pycache__/**
+**/*.pyc

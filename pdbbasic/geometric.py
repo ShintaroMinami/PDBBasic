@@ -1,14 +1,15 @@
 import numpy as np
 import torch
 from einops import rearrange, repeat
+from .utils import unsqueeze
 
 
 def distance_matrix(coord1, coord2=None, no_sqrt=False):
-    coord1 = coord1.unsqueeze(0) if len(coord1.shape) < 3 else coord1
+    coord1 = unsqueeze(coord1, 0) if len(coord1.shape) < 3 else coord1
     if coord2 is None:
         coord2 = coord1
     else:
-        coord2 = coord2.unsqueeze(0) if len(coord2.shape) < 3 else coord2
+        coord2 = unsqueeze(coord2, 0) if len(coord2.shape) < 3 else coord2
     dmat = _calc_distmat2(coord1, coord2)
     if torch.is_tensor(coord1)==torch.is_tensor(coord2)==True:
         return dmat if no_sqrt==True else torch.sqrt(dmat)
@@ -17,13 +18,12 @@ def distance_matrix(coord1, coord2=None, no_sqrt=False):
 
 
 def torsion_angles(coord):
-    coord = coord.unsqueeze(0) if len(coord.shape) < 4 else coord
+    coord = unsqueeze(coord, 0) if len(coord.shape) < 4 else coord
     shape = coord.shape
     flat_ncac = rearrange(coord[:,:,0:3,:], 'b l a c -> (b l a) c')
     if torch.is_tensor(coord):
         dihedral = _points2dihedral_torch(flat_ncac[0:-3], flat_ncac[1:-2], flat_ncac[2:-1], flat_ncac[3:])
     else:
-        flat_ncac = np.array(flat_ncac)
         dihedral = _points2dihedral_numpy(flat_ncac[0:-3], flat_ncac[1:-2], flat_ncac[2:-1], flat_ncac[3:])
     dihedral = rearrange(dihedral, '(b l d) -> b l d', b=shape[0], l=shape[1], d=3)
     dihedral[:,0,0] = 0.0
