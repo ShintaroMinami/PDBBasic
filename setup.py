@@ -1,9 +1,19 @@
 import setuptools
-from os import environ
+import os
 from dunamai import Version
 
+class CleanCommand(setuptools.Command):
+    """Custom clean command to tidy up the project root."""
+    user_options = []
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        os.system('rm -vrf ./build ./dist ./*.pyc ./*.egg-info')
+
 git_version = Version.from_git().serialize(metadata=False)
-VERSION = environ['VERSION'] if 'VERSION' in environ else git_version
+VERSION = os.environ['VERSION'] if 'VERSION' in os.environ else git_version
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -27,7 +37,8 @@ setuptools.setup(
         'einops'
     ],
     classifiers=[
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.8',
     ],
+    cmdclass={'clean': CleanCommand}
 )
