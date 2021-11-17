@@ -8,10 +8,9 @@ import torch
 import pdbbasic as pdbb
 
 # read PDB file
-coord1, info1 = pdbb.readpdb('filename.pdb')
-coord2, info2 = pdbb.readpdb('filename.pdb')
+coord1, info1 = pdbb.readpdb('filename.pdb', with_info=True)
 ca1 = coord1[:,1]
-ca2 = coord2[:,1]
+ca2 = pdbb.readpdb('filename.pdb', CA_only=True)
 
 # calc RMSD
 rmsd_np = pdbb.rmsd(ca1, ca2)
@@ -38,6 +37,9 @@ rmsd_batch = pdbb.rmsd(ca_batch1, ca_batch2)
 sup_batch1, sup_batch2 = pdbb.kabsch(ca_batch1, ca_batch2)
 torsion_batch = pdbb.torsion_angles(bb_batch)
 distmat_batch = pdbb.distance_matrix(ca_batch1)
+
+# all against all RMSD calculation
+rmsd_matrix = pdbb.rmsd_many_vs_many(ca_batch1)
 
 ```
 
