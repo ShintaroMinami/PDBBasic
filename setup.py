@@ -34,7 +34,7 @@ setuptools.setup(
         'numpy',
         'pandas',
         'torch',
-        'einops'
+        'einops',
     ],
     classifiers=[
         'License :: OSI Approved :: MIT License',
