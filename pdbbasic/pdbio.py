@@ -17,13 +17,15 @@ three2one = {t:o for t,o in zip(THREE_LETTER_AAS, ONE_LETTER_AAS)}
 BACKBONE_ATOMS = ['N', 'CA', 'C', 'O']
 
 
-def readpdb(file, backbone_only=False):
+def readpdb(file, with_info=False, CA_only=False):
     data = _read_file(file)
     _check_atomnum(data)
     backbone = _get_backbone(data)
     # sidechain is on construction
     info = _get_information(data)
-    return backbone if backbone_only==True else (backbone, info)
+    if CA_only == True:
+        backbone = backbone[:,1]
+    return (backbone, info) if with_info == True else backbone
 
 
 def writepdb(backbone, info=None, sidechain=None, use_original_resnum=False, ignore_MODEL=False):

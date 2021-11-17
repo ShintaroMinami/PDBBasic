@@ -2,6 +2,31 @@ import numpy as np
 import torch
 
 
+def rmsd_many_vs_many(A, B=None, no_grad=True):
+    B = B if B is not None else A
+    (nA,a,c), (nB,_,_) = A.shape, B.shape
+    if torch.is_tensor(A) == torch.is_tensor(B) == True:
+        A_ext = A.unsqueeze(0).repeat(nB, 1, 1, 1).transpose(0,1).reshape(nA*nB,a,c)
+        B_ext = B.unsqueeze(0).repeat(nA, 1, 1, 1).reshape(nA*nB,a,c)
+        rmsd_matrix = rmsd(A_ext, B_ext).reshape(nA,nB)
+    else:
+        A_ext = np.repeat(np.expand_dims(A, axis=0), nB, axis=0)
+        A_ext = np.transpose(A_ext, (1,0,2,3)).reshape((nA*nB,a,c))
+        B_ext = np.repeat(np.expand_dims(B, axis=0), nA, axis=0).reshape((nA*nB,a,c))
+        rmsd_matrix = rmsd(A_ext, B_ext).reshape((nA,nB))
+    return rmsd_matrix
+
+
+def rmsd_many_vs_one(many, one, no_grad=True):
+    if len(many.shape) < len(one.shape):
+        many, one = one, many
+    if torch.is_tensor(one):
+        one_extend = one.unsqueeze(0).repeat(many.shape[0], 1, 1)
+    else:
+        one_extend = np.repeat(np.expand_dims(one, axis=0), many.shape[0], axis=0)
+    return rmsd(many, one_extend, no_grad=no_grad)
+
+
 def kabsch(A, B, rot_only=False, no_grad=True):
     if torch.is_tensor(A) == torch.is_tensor(B) == True:    
         return kabsch_torch(A, B, rot_only=rot_only, no_grad=no_grad)

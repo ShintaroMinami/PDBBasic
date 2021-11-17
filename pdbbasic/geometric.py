@@ -32,8 +32,8 @@ def torsion_angles(coord):
 
 
 def _calc_distmat2(co1, co2):
-    mat1 = repeat(co1, 'b x c -> b x y c', y=co1.shape[1])
-    mat2 = repeat(co2, 'b x c -> b y x c', y=co2.shape[1])
+    mat1 = repeat(co1, 'b x c -> b x y c', y=co2.shape[1])
+    mat2 = repeat(co2, 'b y c -> b x y c', x=co1.shape[1])
     if torch.is_tensor(co1)==torch.is_tensor(co2)==True:    
         return ((mat1 - mat2)**2).sum(dim=3)
     else:
