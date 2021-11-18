@@ -17,14 +17,13 @@ three2one = {t:o for t,o in zip(THREE_LETTER_AAS, ONE_LETTER_AAS)}
 BACKBONE_ATOMS = ['N', 'CA', 'C', 'O']
 
 
-def readpdb(file, with_info=False, CA_only=False):
+def readpdb(file, with_info=False, CA_only=False, atoms=BACKBONE_ATOMS):
+    atoms = ['CA'] if CA_only == True else atoms
     data = _read_file(file)
-    _check_atomnum(data)
-    backbone = _get_backbone(data)
+    _check_atomnum(data, check=atoms)
+    backbone = _get_backbone(data, atoms)
     # sidechain is on construction
     info = _get_information(data)
-    if CA_only == True:
-        backbone = backbone[:,1]
     return (backbone, info) if with_info == True else backbone
 
 
@@ -80,17 +79,20 @@ def _get_information(data):
     return {'chain':chain, 'aa1':res1, 'aa3':res3, 'resnum':iorg, 'sequence':sequence}
 
 
-def _get_backbone(data):
-    backbone = [
-        data[data['atom']=='N'].coord.values,
-        data[data['atom']=='CA'].coord.values,
-        data[data['atom']=='C'].coord.values,
-        data[data['atom']=='O'].coord.values
-        ]
-    return np.array(list(zip(*backbone)))
+def _get_backbone(data, atoms=BACKBONE_ATOMS):
+    backbone = []
+    if 'N' in atoms:
+        backbone.append(data[data['atom']=='N'].coord.values)
+    if 'CA' in atoms:
+        backbone.append(data[data['atom']=='CA'].coord.values)
+    if 'C' in atoms:
+        backbone.append(data[data['atom']=='C'].coord.values)
+    if 'O' in atoms:
+        backbone.append(data[data['atom']=='O'].coord.values)
+    return np.array(list(zip(*backbone))).squeeze()
 
 
-def _read_file(file):
+def _read_file(file, atoms=None):
     with open(file, "r") as fh:
         lines = fh.read().splitlines()
     # exists protein length
@@ -114,13 +116,16 @@ def _read_file(file):
     return pd.DataFrame(data)
 
 
-def _check_atomnum(data):
+def _check_atomnum(data, check=BACKBONE_ATOMS):
     n  = len(data[data['atom']=='N']) 
     ca = len(data[data['atom']=='CA'])
     c  = len(data[data['atom']=='C'])
     o  = len(data[data['atom']=='O'])
-    assert n == ca, 'different # of atoms: N ({}) != CA ({})'.format(n, ca)
-    assert c == ca, 'different # of atoms: C ({}) != CA ({})'.format(c, ca)
-    assert o == ca, 'different # of atoms: O ({}) != CA ({})'.format(o, ca)
+    if 'N' in check:
+        assert n == ca, 'different # of atoms: N ({}) != CA ({})'.format(n, ca)
+    if 'C' in check:
+        assert c == ca, 'different # of atoms: C ({}) != CA ({})'.format(c, ca)
+    if 'O' in check:
+        assert o == ca, 'different # of atoms: O ({}) != CA ({})'.format(o, ca)
     return
 
