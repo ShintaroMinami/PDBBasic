@@ -1,6 +1,11 @@
 # PDBBasic
 Basic Functions for Protein Structure Data
 
+# Install
+```
+pip install pdbbasic
+```
+
 ## Usage
 ``` python
 import numpy as np
