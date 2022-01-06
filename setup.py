@@ -35,6 +35,7 @@ setuptools.setup(
         'pandas',
         'torch',
         'einops',
+        'pdbecif',
     ],
     classifiers=[
         'License :: OSI Approved :: MIT License',
