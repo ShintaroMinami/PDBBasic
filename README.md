@@ -1,7 +1,7 @@
 # PDBBasic
 Basic Functions for Protein Structure Data
 
-# Install
+## Install
 ```
 pip install pdbbasic
 ```
