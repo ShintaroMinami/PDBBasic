@@ -9,6 +9,8 @@ import pdbbasic as pdbb
 
 # read PDB file
 coord1, info1 = pdbb.readpdb('filename.pdb', with_info=True)
+# coord1.shape -> (N, 4, 3), N=length, 4=atoms:(N,CA,C,O), 3=coordinates:(x,y,z)
+
 ca1 = coord1[:,1]
 ca2 = pdbb.readpdb('filename.pdb', CA_only=True)
 
@@ -20,6 +22,7 @@ coo_sup1, coo_sup2 = pdbb.kabsch(ca1, ca2)
 
 # torsion angle
 torsion = pdbb.torsion_angles(coord1)
+# torsion.shape -> (N, 3), 3=dihedrals:(phi,psi,omega)
 
 # distance matrix
 distmat_within = pdbb.distance_matrix(ca1)
