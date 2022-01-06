@@ -75,8 +75,10 @@ def _get_information(data):
     res3 = np.array(data[data['atom'] == 'CA'].resname.values)
     res1 = np.array([three2one.get(t,'X') for t in res3])
     iorg = np.array(data[data['atom'] == 'CA'].iaa_org.values)
+    occu = np.array(data[data['atom'] == 'CA'].occupancy.values)
+    bfac = np.array(data[data['atom'] == 'CA'].bfactor.values)
     sequence = ''.join(res1)
-    return {'chain':chain, 'aa1':res1, 'aa3':res3, 'resnum':iorg, 'sequence':sequence}
+    return {'chain':chain, 'aa1':res1, 'aa3':res3, 'resnum':iorg, 'sequence':sequence, 'occupancy':occu, 'bfactor':bfac}
 
 
 def _get_backbone(data, atoms=BACKBONE_ATOMS):
@@ -100,18 +102,22 @@ def _read_file(file, atoms=None):
     for l in lines:
         header   = l[0:4]
         if not header == "ATOM": continue
-        atomtype = l[12:16]
-        resname  = l[17:20]
-        chain    = l[21:22]
-        iaa_org  = l[22:27]
-        coord    = [l[30:38], l[38:46], l[46:54]]
+        atomtype  = l[12:16]
+        resname   = l[17:20]
+        chain     = l[21:22]
+        iaa_org   = l[22:27]
+        coord     = [l[30:38], l[38:46], l[46:54]]
+        occupancy = l[54:60] if len(l) > 60 else 0.0
+        bfactor   = l[60:66] if len(l) > 66 else 0.0
         data.append({
             'header': header.strip(),
             'atom': atomtype.strip(),
             'resname': resname.strip(),
             'chain': chain.strip(),
             'iaa_org': np.int(iaa_org),
-            'coord': np.array([np.float(c) for c in coord])
+            'coord': np.array([np.float(c) for c in coord]),
+            'occupancy': np.float(occupancy),
+            'bfactor':  np.float(bfactor)
             })
     return pd.DataFrame(data)
 
