@@ -1,4 +1,5 @@
 # temporary files & directories
+devel/
 build/
 pdbbasic.egg-info/
 dist/
