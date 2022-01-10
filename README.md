@@ -16,10 +16,17 @@ import pdbbasic as pdbb
 coord1, info1 = pdbb.readpdb('filename.pdb', with_info=True)
 # coord1.shape -> (N, 4, 3), N=length, 4=atoms:(N,CA,C,O), 3=coordinates:(x,y,z)
 
+# read mmCIF file
+coord1, info1 = pdbb.readmmcif('filename.cif', with_info=Tru)
+
+# download from PDB
+pdbid = '7bqd'
+coord1, info1 = pdbb.download(pdbid, with_info=True)
+
+# calc RMSD
 ca1 = coord1[:,1]
 ca2 = pdbb.readpdb('filename.pdb', CA_only=True)
 
-# calc RMSD
 rmsd_np = pdbb.rmsd(ca1, ca2)
 
 # Kabsch superposition
