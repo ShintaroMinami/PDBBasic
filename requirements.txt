@@ -1,5 +1,5 @@
-numpy==1.21
-pandas==1.2
+numpy>=1.21
+pandas>=1.2
 torch==1.8
-einops==0.3
+einops>=0.4.1
 pdbecif==1.5
