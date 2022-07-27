@@ -143,8 +143,8 @@ def _read_pdb_file(file, atoms=BACKBONE_ATOMS, models=[1]):
         chain     = l[21:22]
         iaa_org   = l[22:27]
         coord     = [l[30:38], l[38:46], l[46:54]]
-        occupancy = l[54:60] if len(l) > 60 else 0.0
-        bfactor   = l[60:66] if len(l) > 66 else 0.0
+        occupancy = l[54:60] if len(l) >= 60 else 0.0
+        bfactor   = l[60:66] if len(l) >= 66 else 0.0
         data_now.append({
             'model': imodel_now,
             'chain': chain.strip(),
