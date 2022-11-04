@@ -12,6 +12,8 @@ class TestBasicGeneration(TestCase):
         input_file = os.path.dirname(__file__)+'/data/7bqd_notag.pdb'
         ref_numpy_pkl = os.path.dirname(__file__)+'/data/RmsdMat5x15_numpy.pkl'
         ref_torch_pkl = os.path.dirname(__file__)+'/data/RmsdMat5x15_torch.pkl'
+        with open(input_file, 'r') as fh:
+            coordtest = pdbb.readpdb(fh.read())
         coord = pdbb.readpdb(input_file, CA_only=True, model_id=None)
         self.ca_batch1 = rearrange(coord, '(b l) c -> b l c', b=20)
         self.ca_batch2 = self.ca_batch1 + 10.0

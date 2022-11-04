@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch
 import pandas as pd
@@ -22,15 +23,32 @@ BACKBONE_ATOMS = ['N', 'CA', 'C', 'O']
 DOWNLOAD_URL = 'https://files.rcsb.org/download/'
 
 
-def readpdb(file, with_info=False, CA_only=False, atoms=BACKBONE_ATOMS, model_id=1):
+def readpdb(
+        input,
+        with_info: bool = False,
+        CA_only: bool = False,
+        atoms: list = BACKBONE_ATOMS,
+        model_id: list = None
+    ) -> np.array:
     atoms = ['CA'] if CA_only == True else atoms
-    data = _read_pdb_file(file, atoms=atoms, models=model_id)
+    if os.path.isfile(input):
+        data = _read_pdb_file(input, atoms=atoms, models=model_id)
+    elif 'ATOM' in input:
+        data = _read_pdb_line(input, atoms=atoms, models=model_id)
+    else:
+        assert False, "'input' for readpdb() function should be PDB-file or PDB-lines"
     xyz, info = _get_information(data, atoms=atoms)
     xyz = xyz.squeeze()
     return (xyz, info) if with_info == True else xyz
 
 
-def readmmcif(file, with_info=False, CA_only=False, atoms=BACKBONE_ATOMS, model_id=1):
+def readmmcif(
+        file,
+        with_info=False,
+        CA_only=False,
+        atoms=BACKBONE_ATOMS,
+        model_id=None
+    ) -> np.array:
     atoms = ['CA'] if CA_only == True else atoms
     data = mmcif2dataframe(file, atoms=atoms, models=model_id)
     xyz, info = _get_information(data, atoms=atoms)
@@ -38,7 +56,14 @@ def readmmcif(file, with_info=False, CA_only=False, atoms=BACKBONE_ATOMS, model_
     return (xyz, info) if with_info == True else xyz
 
 
-def download(pdbid, with_info=False, CA_only=False, atoms=BACKBONE_ATOMS, model_id=1, url=DOWNLOAD_URL):
+def download(
+        pdbid,
+        with_info: bool = False,
+        CA_only: bool = False,
+        atoms: list = BACKBONE_ATOMS,
+        model_id: int = 1,
+        url: str = DOWNLOAD_URL
+    ) -> np.array:
     fh_gzip = urllib.request.urlopen(url+pdbid+'.cif.gz')
     fh_unzip = gzip.GzipFile(mode='rb', fileobj=fh_gzip)
     with tempfile.NamedTemporaryFile(mode='w') as tmpf:
@@ -47,7 +72,13 @@ def download(pdbid, with_info=False, CA_only=False, atoms=BACKBONE_ATOMS, model_
     return output
 
 
-def writepdb(backbone, info=None, sidechain=None, use_original_resnum=False, ignore_MODEL=False):
+def writepdb(
+        backbone,
+        info: list = None,
+        sidechain: list = None,
+        use_original_resnum: bool = False,
+        ignore_MODEL: bool = False
+    ) -> list:
     backbone = np.array(backbone) if torch.is_tensor(backbone) else backbone
     info = [info] if len(backbone.shape) == 3 else info
     backbone = np.expand_dims(backbone, axis=0) if len(backbone.shape) == 3 else backbone
@@ -108,7 +139,7 @@ def _get_information(data, atoms=BACKBONE_ATOMS):
         else:
             continue
     # reshape
-    xyz = np.stack(xyz).astype(np.float)
+    xyz = np.stack(xyz).astype(float)
     res3 = np.array(res3)
     res1 = np.array([three2one.get(t,'X') for t in res3])
     iorg = np.array(iorg)
@@ -119,18 +150,17 @@ def _get_information(data, atoms=BACKBONE_ATOMS):
     return xyz, {'model':model, 'chain':chain, 'aa1':res1, 'aa3':res3, 'resnum':iorg, 'sequence':sequence, 'occupancy':occu, 'bfactor':bfac}
 
 
-def _read_pdb_file(file, atoms=BACKBONE_ATOMS, models=[1]):
+def _read_pdb_line(pdbline, atoms=BACKBONE_ATOMS, models=None):
     models = [] if models==None else models
     models = [models] if type(models)!=list else models    
-    with open(file, "r") as fh:
-        lines = fh.read().splitlines()
+    lines = pdbline.splitlines()
     # exists protein length
     data, data_now = [], []
     imodel_now = 1
     for l in lines:
         header = l[0:6]
         if "MODEL " in header:
-            imodel = np.int(l.split()[-1])
+            imodel = int(l.split()[-1])
             if imodel_now != imodel:
                 if (imodel_now in models) | (len(models)==0):
                     data = data + data_now
@@ -148,13 +178,21 @@ def _read_pdb_file(file, atoms=BACKBONE_ATOMS, models=[1]):
         data_now.append({
             'model': imodel_now,
             'chain': chain.strip(),
-            'iaa_org': np.int(iaa_org),
+            'iaa_org': int(iaa_org),
             'atom': atomtype.strip(),
             'resname': resname.strip(),
-            'coord': np.array([np.float(c) for c in coord]),
-            'occupancy': np.float(occupancy),
-            'bfactor':  np.float(bfactor)
+            'coord': np.array([float(c) for c in coord]),
+            'occupancy': float(occupancy),
+            'bfactor':  float(bfactor)
             })
     if (imodel_now in models) | (len(models)==0):
         data = data + data_now
     return pd.DataFrame(data)
+
+
+def _read_pdb_file(file, atoms=BACKBONE_ATOMS, models=None):
+    with open(file, 'r') as fh:
+        pdbline = fh.read()
+    df = _read_pdb_line(pdbline, atoms=atoms, models=models)
+    return df
+

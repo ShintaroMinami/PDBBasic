@@ -5,7 +5,7 @@ import pandas as pd
 # mmcif module
 mmcif2dict = MMCIF2Dict()
 
-def mmcif2dataframe(filepath, atoms=['N', 'CA', 'C', 'O'], models=[1]):
+def mmcif2dataframe(filepath, atoms=['N', 'CA', 'C', 'O'], models=None):
     models = [] if models==None else models
     models = [models] if type(models)!=list else models
     # read mmcif file
