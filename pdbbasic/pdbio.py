@@ -39,7 +39,7 @@ def readpdb(
         assert False, "'input' for readpdb() function should be PDB-file or PDB-lines"
     xyz, info = _get_information(data, atoms=atoms)
     xyz = xyz.squeeze()
-    return (np.float32(xyz), info) if with_info == True else xyz
+    return (np.float32(xyz), info) if with_info == True else np.float32(xyz)
 
 
 def readmmcif(
@@ -53,7 +53,7 @@ def readmmcif(
     data = mmcif2dataframe(file, atoms=atoms, models=model_id)
     xyz, info = _get_information(data, atoms=atoms)
     xyz = xyz.squeeze()
-    return (xyz, info) if with_info == True else xyz
+    return (np.float32(xyz), info) if with_info == True else np.float32(xyz)
 
 
 def download(
