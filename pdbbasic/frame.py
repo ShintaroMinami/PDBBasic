@@ -4,7 +4,7 @@ from einops import rearrange, repeat
 from pytorch3d.transforms import quaternion_to_matrix
 
 ANGLE_N_CA_C = torch.tensor(np.deg2rad(111.2, dtype=np.float32))
-ANGLE_CA_C_C = torch.tensor(np.deg2rad(116.2, dtype=np.float32))
+ANGLE_CA_C_N = torch.tensor(np.deg2rad(116.2, dtype=np.float32))
 ANGLE_C_N_CA = torch.tensor(np.deg2rad(124.2, dtype=np.float32))
 ANGLE_CA_C_O = torch.tensor(np.deg2rad(120.8, dtype=np.float32))
 DEFAULT_TORSION_PHI = torch.tensor(np.deg2rad(-150, dtype=np.float32))
