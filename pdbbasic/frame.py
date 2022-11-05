@@ -1,17 +1,16 @@
 import numpy as np
 import torch
 from einops import rearrange, repeat
-from itertools import product
-from pytorch3d.transforms import random_quaternions, quaternion_to_matrix
+from pytorch3d.transforms import quaternion_to_matrix
 
 ANGLE_N_CA_C = torch.tensor(np.deg2rad(111.2, dtype=np.float32))
 ANGLE_CA_C_C = torch.tensor(np.deg2rad(116.2, dtype=np.float32))
 ANGLE_C_N_CA = torch.tensor(np.deg2rad(124.2, dtype=np.float32))
 ANGLE_CA_C_O = torch.tensor(np.deg2rad(120.8, dtype=np.float32))
-TORSION_N = torch.tensor(np.deg2rad(120, dtype=np.float32))
-TORSION_CA = torch.tensor(np.deg2rad(180, dtype=np.float32))
-TORSION_C = torch.tensor(np.deg2rad(180, dtype=np.float32))
-TORSION_PI = torch.tensor(np.deg2rad(180, dtype=np.float32))
+DEFAULT_TORSION_PHI = torch.tensor(np.deg2rad(-150, dtype=np.float32))
+DEFAULT_TORSION_PSI = torch.tensor(np.deg2rad(120, dtype=np.float32))
+DEFAULT_TORSION_OMEGA = torch.tensor(np.deg2rad(180, dtype=np.float32))
+DEFAULT_TORSION_O = torch.tensor(np.deg2rad(-30, dtype=np.float32))
 LENGTH_N_CA = 1.458
 LENGTH_CA_C = 1.523
 LENGTH_C_N  = 1.329
@@ -32,25 +31,28 @@ UNIT_CACN = np.array([
 
 
 def coord2rotation(coord, eps=1e-8):
-    x1 = coord[:,2] - coord[:,1]
-    x1 = x1 / (repeat(torch.linalg.norm(x1, dim=1), 'l -> l c', c=3)+eps)
-    x2 = coord[:,0] - coord[:,1]
-    x2 = x2 - torch.einsum('l c, l -> l c', x1, (torch.einsum('l c, l c -> l', x1, x2)))
-    x2 = x2 / (repeat(torch.linalg.norm(x2, dim=1), 'l -> l c', c=3)+eps)
+    x1 = coord[:,:,2] - coord[:,:,1]
+    x1 = x1 / (repeat(torch.linalg.norm(x1, dim=-1), 'b l -> b l c', c=3)+eps)
+    x2 = coord[:,:,0] - coord[:,:,1]
+    x2 = x2 - torch.einsum('b l c, b l -> b l c', x1, (torch.einsum('b l c, b l c -> b l', x1, x2)))
+    x2 = x2 / (repeat(torch.linalg.norm(x2, dim=-1), 'b l -> b l c', c=3)+eps)
     x3 = torch.cross(x1, x2)
-    x3 = x3 / (repeat(torch.linalg.norm(x3, dim=1), 'l -> l c', c=3)+eps)
-    return torch.stack([x1, x2, x3], dim=1).transpose(1,2)
+    x3 = x3 / (repeat(torch.linalg.norm(x3, dim=-1), 'b l -> b l c', c=3)+eps)
+    return torch.stack([x1, x2, x3], dim=-2).transpose(-1,-2)
 
 
 def coord2translation(coord):
-    return coord[:,1]
+    return coord[:,:,1]
 
 
-def coord_to_frame(coord: torch.Tensor) -> tuple:
+def coord_to_frame(coord: torch.Tensor, unit: str='NCAC') -> tuple:
     org_type = type(coord)
     coord = torch.tensor(coord) if org_type == np.ndarray else coord
-    rot = coord2rotation(coord)
-    trans = coord2translation(coord)
+    coord = coord.unsqueeze(0) if len(coord.shape) == 3 else coord
+    if unit == 'CACN':
+        coord = torch.stack([coord[:,:-1,1],coord[:,:-1,2], coord[:,1:,0]], dim=-2)
+    rot = coord2rotation(coord).squeeze()
+    trans = coord2translation(coord).squeeze()
     trans, rot = (trans.cpu().numpy(), rot.cpu().numpy()) if org_type == np.ndarray else (trans, rot)
     return trans, rot
 
@@ -76,12 +78,13 @@ def frame_to_coord(frame: tuple, unit: str='NCAC'):
     coord = coord + repeat(trans, 'b l c -> b l a c', a=local.shape[-2])
     if unit == 'CACN':
         coord_flat = rearrange(coord, 'b l a c -> b (l a) c')
-        N = _zmat2xyz(LENGTH_N_CA, ANGLE_N_CA_C, TORSION_N, coord_flat[:,3], coord_flat[:,1], coord_flat[:,0])
-        CA = _zmat2xyz(LENGTH_N_CA, ANGLE_C_N_CA, TORSION_CA, coord_flat[:,-4], coord_flat[:,-3], coord_flat[:,-1])
-        C = _zmat2xyz(LENGTH_CA_C, ANGLE_N_CA_C, TORSION_C, coord_flat[:,-3], coord_flat[:,-1], CA)
-        O = _zmat2xyz(LENGTH_C_O, ANGLE_CA_C_O, TORSION_PI, coord_flat[:,-1], CA, C)
+        N = _zmat2xyz(LENGTH_N_CA, ANGLE_N_CA_C, DEFAULT_TORSION_PSI, coord_flat[:,3], coord_flat[:,1], coord_flat[:,0])
+        CA = _zmat2xyz(LENGTH_N_CA, ANGLE_C_N_CA, DEFAULT_TORSION_OMEGA, coord_flat[:,-4], coord_flat[:,-3], coord_flat[:,-1])
+        C = _zmat2xyz(LENGTH_CA_C, ANGLE_N_CA_C, DEFAULT_TORSION_PHI, coord_flat[:,-3], coord_flat[:,-1], CA)
+        O = _zmat2xyz(LENGTH_C_O, ANGLE_CA_C_O, DEFAULT_TORSION_O, coord_flat[:,-1], CA, C)
         coord_flat = torch.cat([N.unsqueeze(-2), coord_flat, CA.unsqueeze(-2), C.unsqueeze(-2), O.unsqueeze(-2)], dim=-2)
         coord = rearrange(coord_flat, 'b (l a) c -> b l a c', a=4)
+    coord = coord.squeeze()
     coord = coord.cpu().numpy() if org_type == np.ndarray else coord
     return coord
 
@@ -97,7 +100,7 @@ def frame_aligned_matrix(frame):
     return torch.einsum('b m n r c, b m n c -> b m n r', rot_inv_mat, co_mat)
 
 
-def FAPE(frame1, frame2, D=10, eps=1e-8, Z=10, mean=True):
+def FAPE(frame1, frame2, D=10, eps=1e-8, Z=10, mean=False):
     org_type1, org_type2 = type(frame1[0]), type(frame2[0])
     frame1 = (torch.tensor(v) for v in frame1) if org_type1 == np.ndarray else frame1
     frame2 = (torch.tensor(v) for v in frame2) if org_type2 == np.ndarray else frame2
