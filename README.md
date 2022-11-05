@@ -54,7 +54,7 @@ coord_recon = pdbb.frame_to_coord(frame)
 # FAPE (Frame Aligned Position Error)
 frame1 = pdbb.coord_to_frame(coord1)
 frame2 = pdbb.coord_to_frame(coord2)
-fape = FAPE(frame1, frame2)
+fape = pdbb.FAPE(frame1, frame2)
 
 # batched calculation is applicable
 ca_batch1 = np.repeat(np.expand_dims(ca1, axis=0), 100, axis=0)
