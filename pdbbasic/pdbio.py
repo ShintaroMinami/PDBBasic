@@ -39,7 +39,7 @@ def readpdb(
         assert False, "'input' for readpdb() function should be PDB-file or PDB-lines"
     xyz, info = _get_information(data, atoms=atoms)
     xyz = xyz.squeeze()
-    return (xyz, info) if with_info == True else xyz
+    return (np.float32(xyz), info) if with_info == True else xyz
 
 
 def readmmcif(
@@ -77,6 +77,7 @@ def writepdb(
         info: list = None,
         sidechain: list = None,
         use_original_resnum: bool = False,
+        atoms: list = BACKBONE_ATOMS,
         ignore_MODEL: bool = False
     ) -> list:
     backbone = np.array(backbone) if torch.is_tensor(backbone) else backbone
@@ -94,11 +95,11 @@ def writepdb(
             line = line + "MODEL    {:4d}\n".format(imodel)
         resnum, aa3, chain = wi
         count = 0
-        for atoms, resnum, aa3, chain in zip(bb, resnum, aa3, chain):
-            for iatom, atom in enumerate(atoms):
+        for resatoms, resnum, aa3, chain in zip(bb, resnum, aa3, chain):
+            for iatom, atom in enumerate(resatoms):
                 count += 1
                 line_header = "ATOM"
-                line_atomname = "{:6d}  {:2s}  {:3s}".format(count, BACKBONE_ATOMS[iatom], aa3)
+                line_atomname = "{:6d}  {:2s}  {:3s}".format(count, atoms[iatom], aa3)
                 line_resnum = "{:s}{:4d}   ".format(chain, resnum)
                 line_coord = "{:8.3f}{:8.3f}{:8.3f}".format(*atom)
                 line = line + "{} {} {} {} \n".format(line_header, line_atomname, line_resnum, line_coord)
