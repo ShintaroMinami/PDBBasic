@@ -4,7 +4,7 @@ from einops import rearrange, repeat
 from .utils import unsqueeze
 
 
-def distance_matrix(coord1, coord2=None, no_sqrt=False):
+def distance_matrix(coord1, coord2=None, no_sqrt=False, eps=1e-10):
     coord1 = unsqueeze(coord1, 0) if len(coord1.shape) < 3 else coord1
     if coord2 is None:
         coord2 = coord1
@@ -12,7 +12,7 @@ def distance_matrix(coord1, coord2=None, no_sqrt=False):
         coord2 = unsqueeze(coord2, 0) if len(coord2.shape) < 3 else coord2
     dmat = _calc_distmat2(coord1, coord2)
     if torch.is_tensor(coord1)==torch.is_tensor(coord2)==True:
-        return dmat if no_sqrt==True else torch.sqrt(dmat)
+        return dmat if no_sqrt==True else torch.sqrt(dmat+eps)
     else:
         return dmat if no_sqrt==True else np.sqrt(dmat)
 

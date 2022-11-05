@@ -30,7 +30,7 @@ class TestBasicGeneration(TestCase):
     def test_rmsd_torch(self):
         ca_batch1 = torch.Tensor(self.ca_batch1)
         ca_batch2 = torch.Tensor(self.ca_batch2)
-        rmsd = pdbb.rmsd(ca_batch1, ca_batch2)
+        rmsd = pdbb.rmsd(ca_batch1, ca_batch2, eps=0)
         self.assertLess(rmsd.max().item(), 0.00001)
 
     def test_rmsd_many_vs_many_numpy(self):

@@ -34,9 +34,9 @@ def kabsch(A, B, rot_only=False, no_grad=True):
         return kabsch_numpy(np.array(A), np.array(B), rot_only=rot_only)
 
 
-def rmsd(A, B, no_grad=True):
+def rmsd(A, B, no_grad=True, eps=1e-10):
     if torch.is_tensor(A) == torch.is_tensor(B) == True:
-        return rmsd_torch(A, B, no_grad=no_grad)
+        return rmsd_torch(A, B, no_grad=no_grad, eps=eps)
     else:
         return rmsd_numpy(np.array(A), np.array(B))
 
@@ -92,7 +92,7 @@ def rmsd_numpy(A, B):
     return np.sqrt(((X-Y)**2).sum(axis=-1).mean(axis=-1))
 
 
-def rmsd_torch(A, B, no_grad=True):
+def rmsd_torch(A, B, no_grad=True, eps=1e-10):
     X, Y = kabsch_torch(A, B, rot_only=False, no_grad=no_grad)
-    return torch.sqrt(((X-Y)**2).sum(dim=-1).mean(dim=-1))
+    return torch.sqrt(((X-Y)**2+eps).sum(dim=-1).mean(dim=-1))
 
