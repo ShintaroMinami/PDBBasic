@@ -17,16 +17,16 @@ LENGTH_C_N  = 1.329
 LENGTH_C_O  = 1.231
 
 UNIT_NCAC = np.array([
-        [-0.5229,  1.3598,  0.0000],
-        [ 0.0000,  0.0000,  0.0000],
-        [ 1.5244,  0.0000,  0.0000]
+        [-0.5229,  1.3598,  0.0000], # N
+        [ 0.0000,  0.0000,  0.0000], # CA
+        [ 1.5244,  0.0000,  0.0000]  # C
     ], dtype=np.float32)
 
 UNIT_CACN = np.array([
-        [-0.6839,  1.3617,  0.0000],
-        [ 0.0000,  0.0000,  0.0000],
-        [-0.6656, -1.0349,  0.0000],
-        [ 1.3288,  0.0000,  0.0000]
+        [-0.6839,  1.3617,  0.0000], # CA
+        [ 0.0000,  0.0000,  0.0000], # C
+        [-0.6656, -1.0349,  0.0000], # O
+        [ 1.3288,  0.0000,  0.0000]  # N
     ], dtype=np.float32)
 
 
@@ -78,10 +78,10 @@ def frame_to_coord(frame: tuple, unit: str='NCAC'):
     coord = coord + repeat(trans, 'b l c -> b l a c', a=local.shape[-2])
     if unit == 'CACN':
         coord_flat = rearrange(coord, 'b l a c -> b (l a) c')
-        N = _zmat2xyz(LENGTH_N_CA, ANGLE_N_CA_C, DEFAULT_TORSION_PSI, coord_flat[:,3], coord_flat[:,1], coord_flat[:,0])
-        CA = _zmat2xyz(LENGTH_N_CA, ANGLE_C_N_CA, DEFAULT_TORSION_OMEGA, coord_flat[:,-4], coord_flat[:,-3], coord_flat[:,-1])
-        C = _zmat2xyz(LENGTH_CA_C, ANGLE_N_CA_C, DEFAULT_TORSION_PHI, coord_flat[:,-3], coord_flat[:,-1], CA)
-        O = _zmat2xyz(LENGTH_C_O, ANGLE_CA_C_O, DEFAULT_TORSION_O, coord_flat[:,-1], CA, C)
+        N = _zmat2xyz(LENGTH_N_CA, ANGLE_N_CA_C, DEFAULT_TORSION_PSI, coord_flat[:,3], coord_flat[:,1], coord_flat[:,0], device=coord_flat.device)
+        CA = _zmat2xyz(LENGTH_N_CA, ANGLE_C_N_CA, DEFAULT_TORSION_OMEGA, coord_flat[:,-4], coord_flat[:,-3], coord_flat[:,-1], device=coord_flat.device)
+        C = _zmat2xyz(LENGTH_CA_C, ANGLE_N_CA_C, DEFAULT_TORSION_PHI, coord_flat[:,-3], coord_flat[:,-1], CA, device=coord_flat.device)
+        O = _zmat2xyz(LENGTH_C_O, ANGLE_CA_C_O, DEFAULT_TORSION_O, coord_flat[:,-1], CA, C, device=coord_flat.device)
         coord_flat = torch.cat([N.unsqueeze(-2), coord_flat, CA.unsqueeze(-2), C.unsqueeze(-2), O.unsqueeze(-2)], dim=-2)
         coord = rearrange(coord_flat, 'b (l a) c -> b l a c', a=4)
     coord = coord.squeeze()
@@ -117,15 +117,15 @@ def FAPE(frame1, frame2, D=10, eps=1e-8, Z=10, mean=False):
 
 
 #### Functions ####
-def _zmat2xyz(bond, angle, dihedral, one, two, three):
+def _zmat2xyz(bond, angle, dihedral, one, two, three, device):
     oldvec1 = bond * torch.sin(angle) * torch.sin(dihedral)
     oldvec2 = bond * torch.sin(angle) * torch.cos(dihedral)
     oldvec3 = bond * torch.cos(angle)
-    oldvec = torch.stack([oldvec1, oldvec2, oldvec3, torch.tensor(1., dtype=torch.float32)], axis=0).unsqueeze(0)
+    oldvec = torch.stack([oldvec1, oldvec2, oldvec3, torch.tensor(1., dtype=torch.float32)], axis=0).unsqueeze(0).to(device)
     mat = _viewat(three, two, one)
     newvec = torch.einsum('b i j, b j -> b i', mat, oldvec)
     # return
-    return newvec[:,:3]
+    return newvec[:,:3].to(device)
 
 def _viewat(p1, p2, p3):
     b, *_ = p1.shape
