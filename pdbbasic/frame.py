@@ -100,7 +100,7 @@ def frame_aligned_matrix(frame):
     return torch.einsum('b m n r c, b m n c -> b m n r', rot_inv_mat, co_mat)
 
 
-def FAPE(frame1, frame2, D=10, eps=1e-8, Z=10, mean=False):
+def FAPE(frame1, frame2, weight=None, D=10, eps=1e-8, Z=10, mean=False):
     org_type1, org_type2 = type(frame1[0]), type(frame2[0])
     frame1 = (torch.tensor(v) for v in frame1) if org_type1 == np.ndarray else frame1
     frame2 = (torch.tensor(v) for v in frame2) if org_type2 == np.ndarray else frame2
@@ -109,6 +109,8 @@ def FAPE(frame1, frame2, D=10, eps=1e-8, Z=10, mean=False):
     device = co1_mat.device
     fape_abs = torch.sqrt(torch.pow(co1_mat - co2_mat, 2).sum(dim=-1)+eps)
     fape_clamp = torch.min(fape_abs, torch.ones_like(fape_abs).to(device)*D)
+    if weight is not None:
+        fape_clamp = fape_clamp * weight
     fape = fape_clamp.mean()/Z if mean else fape_clamp.mean(dim=[1,2])/Z
     fape = fape.cpu().numpy() if org_type1 == np.ndarray else fape
     return fape
