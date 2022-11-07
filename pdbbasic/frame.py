@@ -111,7 +111,10 @@ def FAPE(frame1, frame2, weight=None, D=10, eps=1e-8, Z=10, mean=False):
     fape_clamp = torch.min(fape_abs, torch.ones_like(fape_abs).to(device)*D)
     if weight is not None:
         fape_clamp = fape_clamp * weight
-    fape = fape_clamp.mean()/Z if mean else fape_clamp.mean(dim=[1,2])/Z
+        weight_sum = weight.sum() if mean else weight.sum(dim=[1,2])
+    else:
+        weight_sum = 1.0
+    fape = fape_clamp.sum()/weight_sum/Z if mean else fape_clamp.sum(dim=[1,2])/weight_sum/Z
     fape = fape.cpu().numpy() if org_type1 == np.ndarray else fape
     return fape
 
