@@ -46,13 +46,13 @@ def coord2translation(coord):
 
 
 def coord_to_frame(coord: torch.Tensor, unit: str='NCAC') -> tuple:
-    org_type = type(coord)
+    org_type, org_shape = type(coord), coord.shape
     coord = torch.tensor(coord) if org_type == np.ndarray else coord
     coord = coord.unsqueeze(0) if len(coord.shape) == 3 else coord
     if unit == 'CACN':
         coord = torch.stack([coord[:,:-1,1],coord[:,:-1,2], coord[:,1:,0]], dim=-2)
-    rot = coord2rotation(coord).squeeze()
-    trans = coord2translation(coord).squeeze()
+    rot = coord2rotation(coord).squeeze() if len(org_shape) == 3 else coord2rotation(coord)
+    trans = coord2translation(coord).squeeze() if len(org_shape) == 3 else coord2translation(coord)
     trans, rot = (trans.cpu().numpy(), rot.cpu().numpy()) if org_type == np.ndarray else (trans, rot)
     return trans, rot
 
@@ -67,7 +67,7 @@ def frame_to_coord(frame: tuple, unit: str='NCAC'):
     elif unit == 'CACN':
         local = UNIT_CACN
     trans, rot = frame
-    org_type = type(trans)
+    org_type, org_shape = type(trans), trans.shape
     trans = torch.tensor(trans) if org_type == np.ndarray else trans
     rot = torch.tensor(rot) if org_type == np.ndarray else rot
     trans = trans.unsqueeze(0) if len(trans.shape)==2 else trans
@@ -84,7 +84,7 @@ def frame_to_coord(frame: tuple, unit: str='NCAC'):
         O = _zmat2xyz(LENGTH_C_O, ANGLE_CA_C_O, DEFAULT_TORSION_O, coord_flat[:,-1], CA, C, device=coord_flat.device)
         coord_flat = torch.cat([N.unsqueeze(-2), coord_flat, CA.unsqueeze(-2), C.unsqueeze(-2), O.unsqueeze(-2)], dim=-2)
         coord = rearrange(coord_flat, 'b (l a) c -> b l a c', a=4)
-    coord = coord.squeeze()
+    coord = coord.squeeze() if len(org_shape) == 2 else coord
     coord = coord.cpu().numpy() if org_type == np.ndarray else coord
     return coord
 
