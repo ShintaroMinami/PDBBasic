@@ -61,7 +61,7 @@ def transquat_to_coord(trans, quat):
     return frame_to_coord((trans, quaternion_to_matrix(quat)))
 
 
-def frame_to_coord(frame: tuple, unit: str='NCAC'):
+def frame_to_coord(frame: tuple, unit: str='NCAC', completion=False):
     if unit == 'NCAC':
         local = UNIT_NCAC
     elif unit == 'CACN':
@@ -76,7 +76,7 @@ def frame_to_coord(frame: tuple, unit: str='NCAC'):
     local = local.to(trans.device)
     coord = torch.einsum('b l c r, a r -> b l a c', rot, local)
     coord = coord + repeat(trans, 'b l c -> b l a c', a=local.shape[-2])
-    if unit == 'CACN':
+    if (unit == 'CACN') and completion:
         coord_flat = rearrange(coord, 'b l a c -> b (l a) c')
         N = _zmat2xyz(LENGTH_N_CA, ANGLE_N_CA_C, DEFAULT_TORSION_PSI, coord_flat[:,3], coord_flat[:,1], coord_flat[:,0], device=coord_flat.device)
         CA = _zmat2xyz(LENGTH_N_CA, ANGLE_C_N_CA, DEFAULT_TORSION_OMEGA, coord_flat[:,-4], coord_flat[:,-3], coord_flat[:,-1], device=coord_flat.device)
@@ -84,6 +84,10 @@ def frame_to_coord(frame: tuple, unit: str='NCAC'):
         O = _zmat2xyz(LENGTH_C_O, ANGLE_CA_C_O, DEFAULT_TORSION_O, coord_flat[:,-1], CA, C, device=coord_flat.device)
         coord_flat = torch.cat([N.unsqueeze(-2), coord_flat, CA.unsqueeze(-2), C.unsqueeze(-2), O.unsqueeze(-2)], dim=-2)
         coord = rearrange(coord_flat, 'b (l a) c -> b l a c', a=4)
+    elif (unit == 'CACN'):
+        coord_flat = rearrange(coord, 'b l a c -> b (l a) c')[:,3:-1]
+        coord = rearrange(coord_flat, 'b (l a) c -> b l a c', a=4)
+    
     coord = coord.squeeze() if len(org_shape) == 2 else coord
     coord = coord.cpu().numpy() if org_type == np.ndarray else coord
     return coord
