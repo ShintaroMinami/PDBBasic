@@ -84,7 +84,7 @@ def frame_to_coord(frame: tuple, unit: str='NCAC', completion=False):
         O = _zmat2xyz(LENGTH_C_O, ANGLE_CA_C_O, DEFAULT_TORSION_O, coord_flat[:,-1], CA, C, device=coord_flat.device)
         coord_flat = torch.cat([N.unsqueeze(-2), coord_flat, CA.unsqueeze(-2), C.unsqueeze(-2), O.unsqueeze(-2)], dim=-2)
         coord = rearrange(coord_flat, 'b (l a) c -> b l a c', a=4)
-    elif unit == 'CACN':
+    elif unit == 'CACN': # [3:-1] to extracts NCACO format from CACON, like "CA C O | N ... CA C O | N"
         coord_flat = rearrange(coord, 'b l a c -> b (l a) c')[:,3:-1]
         coord = rearrange(coord_flat, 'b (l a) c -> b l a c', a=4)
     coord = coord.squeeze() if len(org_shape) == 2 else coord
