@@ -18,6 +18,7 @@ def distance_matrix(coord1, coord2=None, no_sqrt=False, eps=1e-10):
 
 
 def torsion_angles(coord):
+    org_shape = coord.shape
     coord = unsqueeze(coord, 0) if len(coord.shape) < 4 else coord
     shape = coord.shape
     flat_ncac = rearrange(coord[:,:,0:3,:], 'b l a c -> (b l a) c')
@@ -28,7 +29,8 @@ def torsion_angles(coord):
     dihedral = rearrange(dihedral, '(b l d) -> b l d', b=shape[0], l=shape[1], d=3)
     dihedral[:,0,0] = 0.0
     dihedral[:,-1,1:] = 0.0
-    return dihedral.squeeze()
+    dihedral = dihedral.squeeze(0) if len(org_shape) < 4 else dihedral
+    return dihedral
 
 
 def _calc_distmat2(co1, co2):
