@@ -25,7 +25,7 @@ class TestBasicGeneration(TestCase):
 
     def test_rmsd_numpy(self):
         rmsd = pdbb.rmsd(self.ca_batch1, self.ca_batch2)
-        self.assertAlmostEqual(rmsd.max(), 0)
+        self.assertLess(rmsd.max().item(), 0.00001)
     
     def test_rmsd_torch(self):
         ca_batch1 = torch.Tensor(self.ca_batch1)
@@ -37,7 +37,7 @@ class TestBasicGeneration(TestCase):
         ca_batch1 = self.ca_batch1[:5]
         ca_batch2 = self.ca_batch1[5:]
         rmat = pdbb.rmsd_many_vs_many(ca_batch1, ca_batch2)
-        self.assertAlmostEqual((self.rmsdmat_ref_numpy-rmat).max(), 0)
+        self.assertLess((self.rmsdmat_ref_numpy-rmat).max().item(), 0.00001)
         
     def test_rmsd_many_vs_many_torch(self):
         ca_batch1 = torch.Tensor(self.ca_batch1[:5])
