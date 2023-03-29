@@ -179,7 +179,8 @@ def _read_pdb_line(pdbline, atoms=BACKBONE_ATOMS, models=None):
         data_now.append({
             'model': imodel_now,
             'chain': chain.strip(),
-            'iaa_org': int(iaa_org),
+            'iaa_org': int(iaa_org[:-1]),
+            'saa_org': iaa_org,
             'atom': atomtype.strip(),
             'resname': resname.strip(),
             'coord': np.array([float(c) for c in coord]),
