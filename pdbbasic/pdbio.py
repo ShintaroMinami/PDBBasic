@@ -124,16 +124,17 @@ def _get_writeinfo(length, info=None, original=False):
 
 def _get_information(data, atoms=BACKBONE_ATOMS):
     df = data
-    df['id'] = df.apply(lambda x: f"{x['model']:03d}-{x['chain']}-{x['iaa_org']:05d}", axis=1)
+    df['id'] = df.apply(lambda x: f"{x['model']:03d}-{x['chain']}-{x['saa_org']}", axis=1)
     dfg = df.groupby('id')
     # format
-    chain, res3, xyz, iorg, occu, bfac, mod = [], [], [], [], [], [], []
+    chain, res3, xyz, iorg, sorg, occu, bfac, mod = [], [], [], [], [], [], [], []
     for _,d in dfg:
         if len(d.coord.values)==len(atoms):
             chain.append(d.chain.values[0])
             res3.append(d.resname.values[0])
             xyz.append(np.stack(d.coord.values))
             iorg.append(d.iaa_org.values[0])
+            sorg.append(d.saa_org.values[0])
             occu.append(d.occupancy.values[0])
             bfac.append(d.bfactor.values[0])
             mod.append(d.model.values[0])
@@ -144,11 +145,12 @@ def _get_information(data, atoms=BACKBONE_ATOMS):
     res3 = np.array(res3)
     res1 = np.array([three2one.get(t,'X') for t in res3])
     iorg = np.array(iorg)
+    sorg = np.array(sorg)
     occu = np.array(occu)
     bfac = np.array(bfac)
     model = np.array(mod)
     sequence = ''.join(res1)
-    return xyz, {'model':model, 'chain':chain, 'aa1':res1, 'aa3':res3, 'resnum':iorg, 'sequence':sequence, 'occupancy':occu, 'bfactor':bfac}
+    return xyz, {'model':model, 'chain':chain, 'aa1':res1, 'aa3':res3, 'resnum':iorg, 'resstr':sorg, 'sequence':sequence, 'occupancy':occu, 'bfactor':bfac}
 
 
 def _read_pdb_line(pdbline, atoms=BACKBONE_ATOMS, models=None):
