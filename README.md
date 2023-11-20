@@ -82,5 +82,3 @@ rmsd_matrix = pdbb.rmsd_many_vs_many(ca_batch1)
 * pandas
 * pytorch
 * einops
-* pytorch3d
-

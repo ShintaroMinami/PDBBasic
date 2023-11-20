@@ -36,7 +36,6 @@ setuptools.setup(
         'torch',
         'einops',
         'pdbecif',
-        'pytorch3d',
     ],
     classifiers=[
         'License :: OSI Approved :: MIT License',
