@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from einops import rearrange, repeat
-from pytorch3d.transforms import quaternion_to_matrix
+from .quaternion import quaternion_to_matrix
 
 ANGLE_N_CA_C = torch.tensor(np.deg2rad(111.2, dtype=np.float32))
 ANGLE_CA_C_N = torch.tensor(np.deg2rad(116.2, dtype=np.float32))
