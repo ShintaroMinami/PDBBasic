@@ -38,11 +38,11 @@ def mmcif2dataframe(filepath, atoms=['N', 'CA', 'C', 'O'], models=None):
     data = [d[1:] for d in data if d[4] in atoms]
     # to Dataframe
     df = pd.DataFrame(data, columns=['model', 'chain', 'iaa_org', 'atom', 'resname', 'x', 'y', 'z', 'occupancy', 'bfactor'])
-    df['coord'] = df.apply(lambda x: np.array([x['x'], x['y'], x['z']], dtype=np.float), axis=1)
+    df['coord'] = df.apply(lambda x: np.array([x['x'], x['y'], x['z']], dtype=float), axis=1)
     df = df[['model', 'chain', 'iaa_org', 'atom', 'resname', 'coord', 'occupancy', 'bfactor']]
     df['model'] = df['model'].astype(np.int)
     df['iaa_org'] = df['iaa_org'].astype(np.int)
-    df['occupancy'] = df['occupancy'].astype(np.float)
-    df['bfactor'] = df['bfactor'].astype(np.float)
+    df['occupancy'] = df['occupancy'].astype(float)
+    df['bfactor'] = df['bfactor'].astype(float)
     # return
     return df
